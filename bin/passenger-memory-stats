@@ -218,6 +218,10 @@ class MemoryStats
 			p = Process.new
 			if threads_known
 				p.pid, p.ppid, p.threads, p.vm_size, p.rss, p.name = line.split(/ +/, 6)
+				if RUBY_PLATFORM =~ /solaris/ and p.name !~ /^ps/
+				   arg = `pargs #{p.pid}`.split(/\n/)[1]
+				   p.name = arg.sub(/argv\[0\]: /,'') unless arg.nil?
+				end
 			else
 				p.pid, p.ppid, p.vm_size, p.rss, p.name = line.split(/ +/, 5)
 				p.threads = "?"
