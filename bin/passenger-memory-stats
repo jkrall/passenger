@@ -38,17 +38,17 @@ class Table
 		@column_names = column_names
 		@rows = []
 	end
-	
+
 	def add_row(values)
 		@rows << values.to_a
 	end
-	
+
 	def add_rows(list_of_rows)
 		list_of_rows.each do |row|
 			add_row(row)
 		end
 	end
-	
+
 	def remove_column(name)
 		i = @column_names.index(name)
 		@column_names.delete_at(i)
@@ -56,7 +56,7 @@ class Table
 			row.delete_at(i)
 		end
 	end
-	
+
 	def to_s(title = nil)
 		max_column_widths = [1] * @column_names.size
 		(@rows + [@column_names]).each do |row|
@@ -64,7 +64,7 @@ class Table
 				max_column_widths[i] = [value.to_s.size, max_column_widths[i]].max
 			end
 		end
-		
+
 		format_string = max_column_widths.map{ |i| "%#{-i}s" }.join("  ")
 		header = sprintf(format_string, *@column_names).rstrip << "\n"
 		if title
@@ -106,7 +106,7 @@ class MemoryStats
 		attr_accessor :rss                  # in KB
 		attr_accessor :name
 		attr_accessor :private_dirty_rss    # in KB
-		
+
 		def vm_size_in_mb
 			return sprintf("%.1f MB", vm_size / 1024.0)
 		end
@@ -114,7 +114,7 @@ class MemoryStats
 		def rss_in_mb
 			return sprintf("%.1f MB", rss / 1024.0)
 		end
-		
+
 		def private_dirty_rss_in_mb
 			if private_dirty_rss.is_a?(Numeric)
 				return sprintf("%.1f MB", private_dirty_rss / 1024.0)
@@ -122,12 +122,12 @@ class MemoryStats
 				return "?"
 			end
 		end
-		
+
 		def to_a
 			return [pid, ppid, threads, vm_size_in_mb, private_dirty_rss_in_mb, rss_in_mb, name]
 		end
 	end
-	
+
 	def start
 		if PlatformInfo.httpd
 			apache_processes = list_processes(:exe => PlatformInfo.httpd)
@@ -145,16 +145,16 @@ class MemoryStats
 				"executable's filename, or set the HTTPD environment variable " <<
 				"to your 'httpd' or 'apache2' executable's filename."
 		end
-		
+
 		puts
 		nginx_processes = list_processes(:exe => "nginx")
 		print_process_list("Nginx processes", nginx_processes)
-		
+
 		puts
 		passenger_processes = list_processes(:match =>
 			/((^| )Passenger |(^| )Rails:|(^| )Rack:|ApplicationPoolServerExecutable|PassengerNginxHelperServer)/)
 		print_process_list("Passenger processes", passenger_processes, :show_ppid => false)
-		
+
 		if RUBY_PLATFORM !~ /linux/
 			puts
 			puts "*** WARNING: The private dirty RSS can only be displayed " <<
@@ -165,15 +165,15 @@ class MemoryStats
 				"private dirty RSS of processes cannot be determined."
 		end
 	end
-	
+
 	# Returns a list of Process objects that match the given search criteria.
 	#
 	#  # Search by executable path.
 	#  list_processes(:exe => '/usr/sbin/apache2')
-	#  
+	#
 	#  # Search by executable name.
 	#  list_processes(:name => 'ruby1.8')
-	#  
+	#
 	#  # Search by process name.
 	#  list_processes(:match => 'Passenger FrameworkSpawner')
 	def list_processes(options)
@@ -197,7 +197,7 @@ class MemoryStats
 		else
 			raise ArgumentError, "Invalid options."
 		end
-		
+
 		processes = []
 		case RUBY_PLATFORM
 		when /solaris/
@@ -214,7 +214,7 @@ class MemoryStats
 		list.each do |line|
 			line.gsub!(/^ */, '')
 			line.gsub!(/ *$/, '')
-			
+
 			p = Process.new
 			if threads_known
 				p.pid, p.ppid, p.threads, p.vm_size, p.rss, p.name = line.split(/ +/, 6)
@@ -266,7 +266,7 @@ private
 	rescue Errno::EACCES, Errno::ENOENT
 		return nil
 	end
-	
+
 	def print_process_list(title, processes, options = {})
 		table = Table.new(%w{PID PPID Threads VMSize Private Resident Name})
 		table.add_rows(processes)
@@ -279,7 +279,8 @@ private
 			table.remove_column('Private')
 		end
 		puts table.to_s(title)
-		
+
+		puts   "### Processes: #{processes.size}"
 		if platform_provides_private_dirty_rss_information?
 			total_private_dirty_rss = 0
 			some_private_dirty_rss_cannot_be_determined = false
@@ -290,7 +291,6 @@ private
 					some_private_dirty_rss_cannot_be_determined = true
 				end
 			end
-			puts   "### Processes: #{processes.size}"
 			printf "### Total private dirty RSS: %.2f MB", total_private_dirty_rss / 1024.0
 			if some_private_dirty_rss_cannot_be_determined
 				puts " (?)"
